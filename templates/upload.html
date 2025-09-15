@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Upload Image - ColorScope</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --text-color: #fff;
+      --panel-bg: rgba(255, 255, 255, 0.12);
+      --panel-hover: rgba(255, 255, 255, 0.22);
+      --accent: #00e1ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem 4rem;
+      background: url("{{ url_for('static', filename='images/rainbow.jpg') }}") no-repeat center center fixed;
+      background-size: cover;
+      color: var(--text-color);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(45deg, rgba(0,0,0,0.65), rgba(0,0,0,0.35));
+      background-size: 400% 400%;
+      animation: gradientMove 12s ease infinite;
+      z-index: -1;
+    }
+
+    header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+      animation: fadeInDown 1s ease;
+    }
+
+    .controls {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .controls button,
+    .controls a button {
+      padding: .6rem 1rem;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.15);
+      color: var(--text-color);
+      cursor: pointer;
+      font-weight: 500;
+      transition: background .2s ease, transform .15s ease, border-color .2s ease;
+      backdrop-filter: blur(6px);
+    }
+
+    .controls button:hover,
+    .controls a button:hover {
+      background: var(--panel-hover);
+      transform: translateY(-2px) scale(1.03);
+      border-color: rgba(255,255,255,0.6);
+    }
+
+    .controls button:active,
+    .controls a button:active {
+      transform: scale(0.95);
+    }
+
+    .back-button {
+      padding: .6rem 1rem;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.15);
+      color: var(--text-color);
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      margin-bottom: 1.5rem;
+      transition: background .2s ease, transform .2s ease, border-color .2s ease;
+      backdrop-filter: blur(6px);
+      animation: fadeIn 1.2s ease;
+    }
+    .back-button:hover {
+      background: var(--panel-hover);
+      transform: translateY(-1px);
+      border-color: rgba(255,255,255,0.6);
+    }
+
+    form {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      animation: fadeInUp 1s ease;
+    }
+
+    .upload-zone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: .75rem;
+      padding: 2rem;
+      border: 2px dashed rgba(255,255,255,0.5);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: background .25s ease, border-color .25s ease, box-shadow .25s ease;
+      max-width: 360px;
+      margin: 0 auto 1rem;
+      text-align: center;
+    }
+    .upload-zone.dragover {
+      background: rgba(255,255,255,0.08);
+      border-color: var(--accent);
+      box-shadow: 0 0 20px var(--accent);
+      animation: pulseGlow 1.2s infinite alternate;
+    }
+    .upload-zone p {
+      margin: 0;
+      font-size: 0.95rem;
+      opacity: 0.9;
+    }
+
+    input[type=file] {
+      display: none;
+    }
+
+    .preview {
+      margin-top: .5rem;
+      max-width: 140px;
+      max-height: 140px;
+      border-radius: 10px;
+      overflow: hidden;
+      display: none;
+      animation: fadeZoom 0.6s ease forwards;
+    }
+    .preview img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+    .filename {
+      font-size: .85rem;
+      opacity: 0.85;
+      word-break: break-word;
+    }
+
+    .card {
+      display: inline-block;
+      border-radius: 14px;
+      padding: 1.25rem;
+      margin-top: 1rem;
+      text-align: left;
+      background: var(--panel-bg);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.37);
+      max-width: 420px;
+      width: 100%;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: slideUp 0.8s ease forwards;
+    }
+
+    .kv {
+      display: grid;
+      grid-template-columns: 90px 1fr;
+      gap: .5rem .75rem;
+      align-items: center;
+    }
+
+    .swatch {
+      width: 160px;
+      height: 80px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.35);
+      background: #888;
+    }
+
+    .error {
+      color: #ff6b6b;
+      margin-top: .75rem;
+      font-weight: 500;
+      animation: shake 0.3s ease;
+    }
+
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeZoom { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    @keyframes pulseGlow { from { box-shadow: 0 0 5px var(--accent); } to { box-shadow: 0 0 20px var(--accent); } }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-4px); }
+      40% { transform: translateX(4px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+  </style>
+  <script>
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+      localStorage.setItem("darkMode", document.body.classList.contains("dark-mode"));
+    }
+
+    window.onload = function() {
+      if (localStorage.getItem("darkMode") === "true") {
+        document.body.classList.add("dark-mode");
+      }
+    };
+  </script>
+</head>
+<body>
+  <header>
+    <h1>🖼️ Analyze an Image</h1>
+    <div class="controls">
+      <button onclick="toggleDarkMode()">🌙/☀️</button>
+      <a href="{{ url_for('logout') }}"><button>Logout</button></a>
+    </div>
+  </header>
+
+  <a href="/" class="back-button">← Back to Home</a>
+
+  <form action="/upload" method="post" enctype="multipart/form-data" id="uploadForm">
+    <label class="upload-zone" id="uploadZone">
+      <p>📂 Drag & Drop an image here or click to select</p>
+      <input type="file" name="image" accept="image/*" required id="fileInput" />
+      <div class="preview" id="preview"></div>
+      <div class="filename" id="filename"></div>
+    </label>
+    <button type="submit">Analyze</button>
+  </form>
+
+  {% if error %}
+    <div class="error">Error: {{ error }}</div>
+  {% endif %}
+
+  {% if result %}
+    <div class="card">
+      <h3>Result</h3>
+      <div class="kv">
+        <div>Detected</div><div>{{ result.name }}</div>
+        <div>HSV</div><div>H: {{ result.hsv.h }} &nbsp; S: {{ result.hsv.s }} &nbsp; V: {{ result.hsv.v }}</div>
+        <div>RGB</div><div>R: {{ result.rgb.r }} &nbsp; G: {{ result.rgb.g }} &nbsp; B: {{ result.rgb.b }}</div>
+        <div>HEX</div><div>{{ result.hex }}</div>
+        <div>Swatch</div><div class="swatch" style="background: {{ result.hex }}"></div>
+      </div>
+    </div>
+  {% endif %}
+
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const uploadZone = document.getElementById("uploadZone");
+    const preview = document.getElementById("preview");
+    const filenameEl = document.getElementById("filename");
+
+    uploadZone.addEventListener("click", () => fileInput.click());
+
+    ["dragenter", "dragover"].forEach(evt => {
+      uploadZone.addEventListener(evt, e => {
+        e.preventDefault();
+        uploadZone.classList.add("dragover");
+      });
+    });
+    ["dragleave", "drop"].forEach(evt => {
+      uploadZone.addEventListener(evt, e => {
+        e.preventDefault();
+        uploadZone.classList.remove("dragover");
+      });
+    });
+
+    uploadZone.addEventListener("drop", e => {
+      if (e.dataTransfer.files.length) {
+        fileInput.files = e.dataTransfer.files;
+        showPreview(fileInput.files[0]);
+      }
+    });
+
+    fileInput.addEventListener("change", () => {
+      if (fileInput.files.length) {
+        showPreview(fileInput.files[0]);
+      }
+    });
+
+    function showPreview(file) {
+      filenameEl.textContent = file.name;
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+          preview.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+      } else {
+        preview.innerHTML = "";
+        preview.style.display = "none";
+      }
+    }
+  </script>
+</body>
+</html>
